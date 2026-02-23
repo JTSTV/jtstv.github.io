@@ -822,3 +822,10 @@ a.article-title:hover {
     color: #fff;
   }
 }
+.red-box {
+  border: 2px solid #f00;
+  padding: 10px;
+  border-radius: 5px;
+  background-color: #fff5f5;
+  overflow-x: auto;
+}
