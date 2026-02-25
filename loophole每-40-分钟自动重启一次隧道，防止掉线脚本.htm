@@ -1,23 +1,6 @@
-<!DOCTYPE html><html><head><meta charset="utf-8"><title>loophole每 40 分钟自动重启一次隧道，防止掉线脚本 | 悔恨自己的博客</title><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"><link rel="stylesheet" href="/css/style.css"><meta name="generator" content="Hexo 8.1.1"></head><body> <div id="container"> <div id="wrap"> <header id="header"> <div id="banner"></div> <div id="header-outer" class="outer"> <div id="header-title" class="inner"><a href="/" id="logo"> 悔恨自己的博客</a></div> <div id="header-inner" class="inner"></div> </div></header> <div class="outer"> <section id="main"><article id="post-loophole每-40-分钟自动重启一次隧道，防止掉线脚本" class="article article-type-post h-entry"><div class="article-meta"> <a href="/loophole%E6%AF%8F-40-%E5%88%86%E9%92%9F%E8%87%AA%E5%8A%A8%E9%87%8D%E5%90%AF%E4%B8%80%E6%AC%A1%E9%9A%A7%E9%81%93%EF%BC%8C%E9%98%B2%E6%AD%A2%E6%8E%89%E7%BA%BF%E8%84%9A%E6%9C%AC.htm" class="article-date"> <time class="dt-published" datetime="2026-02-23T03:33:15.000Z" itemprop="datePublished">2026年02月23</time> </a> </div> <div class="article-inner"> <header class="article-header"> <h1 class="article-title p-name" itemprop="headline name"> loophole每 40 分钟自动重启一次隧道，防止掉线脚本 </h1> </header> <div class="article-entry e-content" itemprop="articleBody"> <p>前提条件loophole可执行文件位于</p> <div class="red-box"> <pre><code class="bash highlight">/usr/local/bin
-
-````
-&lt;/div&gt;
-
-
-目录,制作的脚本也位于该目录
-输出的日志文件位于
-
-/var/log目录的loophole_loop.log文件
-查看检测脚本文件是否正常运行
-&lt;div class=<span class="string">&quot;red-box&quot;</span>&gt;
-```bash
-<span class="built_in">cat</span> /var/log/loophole_loop.log
-
-````
-&lt;/div&gt;
-&lt;div class=<span class="string">&quot;red-box&quot;</span>&gt;
-```bash
-<span class="comment">#!/bin/bash</span>
+<!DOCTYPE html><html><head><meta charset="utf-8"><title>loophole每 40 分钟自动重启一次隧道，防止掉线脚本 | 悔恨自己的博客</title><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"><link rel="stylesheet" href="/css/style.css"><meta name="generator" content="Hexo 8.1.1"></head><body> <div id="container"> <div id="wrap"> <header id="header"> <div id="banner"></div> <div id="header-outer" class="outer"> <div id="header-title" class="inner"><a href="/" id="logo"> 悔恨自己的博客</a></div> <div id="header-inner" class="inner"></div> </div></header> <div class="outer"> <section id="main"><article id="post-loophole每-40-分钟自动重启一次隧道，防止掉线脚本" class="article article-type-post h-entry"><div class="article-meta"> <a href="/loophole%E6%AF%8F-40-%E5%88%86%E9%92%9F%E8%87%AA%E5%8A%A8%E9%87%8D%E5%90%AF%E4%B8%80%E6%AC%A1%E9%9A%A7%E9%81%93%EF%BC%8C%E9%98%B2%E6%AD%A2%E6%8E%89%E7%BA%BF%E8%84%9A%E6%9C%AC.htm" class="article-date"> <time class="dt-published" datetime="2026-02-23T03:33:15.000Z" itemprop="datePublished">2026年02月23</time> </a> </div> <div class="article-inner"> <header class="article-header"> <h1 class="article-title p-name" itemprop="headline name"> loophole每 40 分钟自动重启一次隧道，防止掉线脚本 </h1> </header> <div class="article-entry e-content" itemprop="articleBody"> <p>前提条件loophole可执行文件位于</p> <pre><code class="highlight plaintext">/usr/local/bin
+</code></pre> <p>目录,制作的脚本也位于该目录<br>输出的日志文件位于</p> <p>&#x2F;var&#x2F;log目录的loophole_loop.log文件<br>查看检测脚本文件是否正常运行</p> <pre><code class="bash highlight"><span class="built_in">cat</span> /var/log/loophole_loop.log
+</code></pre> <div class="red-box"> <pre><code class="bash highlight"><span class="meta">#!/bin/bash</span>
 <span class="comment"># Loophole 循环守护脚本</span>
 <span class="comment"># 每 40 分钟自动重启一次隧道，防止掉线</span>
 
