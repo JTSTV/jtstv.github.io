@@ -39,6 +39,9 @@ jobs:
           mkdir -p "${POST_DIR}"
           CHANGED=()
 
+          # 安全获取变更文件，防止jq空输入崩溃
+          CHANGED_FILES=$(jq -r '.commits[].added[]?, .commits[].modified[]?' <<< '${{ toJson(github.event) }}' | sort -u | uniq)
+          
           while IFS= read -r f; do
             [[ -z "$f" ]] && continue
             [[ ! "$f" =~ ^${POST_DIR}/ ]] && continue
@@ -46,7 +49,7 @@ jobs:
             [[ ! -f "$f" ]] && continue
 
             fn=$(basename "$f")
-            echo "处理文件：$fn"
+            echo "检测待处理文件：$fn"
             tmp=$(mktemp)
             title_esc=$(printf "%s" "$fn" | sed 's/"/\\"/g')
             out="${POST_DIR}/${TODAY}-${fn}.md"
@@ -61,11 +64,11 @@ EOF
             rm -f "$f"
             mv "$tmp" "$out"
             CHANGED+=("$out")
-          done < <(jq -r '.commits[].added[]?, .commits[].modified[]?' <<< '${{ toJson(github.event) }}' | sort -u)
+          done <<< "$CHANGED_FILES"
 
-          echo "处理数量：${#CHANGED[@]}"
+          echo "本次待生成文章数量：${#CHANGED[@]}"
           if [[ ${#CHANGED[@]} -eq 0 ]];then
-            echo "无待处理文件，正常退出"
+            echo ">>> 本次没有需要转换的稿件，任务完成，success"
             exit 0
           fi
 
