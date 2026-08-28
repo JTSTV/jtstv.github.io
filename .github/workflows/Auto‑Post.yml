@@ -11,13 +11,14 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: 设置北京时间
+      - name: 设置时区
         run: |
           sudo ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
           echo "Asia/Shanghai" | sudo tee /etc/timezone
 
-      - name: 判断是否带跳过标记
+      - name: 判断跳过标记
         id: skip_check
         run: |
           MSG="${{ github.event.head_commit.message }}"
@@ -27,8 +28,7 @@ jobs:
             echo "skip=false" >> $GITHUB_OUTPUT
           fi
 
-      - name: 遍历整个_posts文件夹转换
-        id: convert_step
+      - name: 遍历_posts转换
         if: steps.skip_check.outputs.skip == 'false'
         run: |
           POST_DIR="_posts"
@@ -36,11 +36,11 @@ jobs:
           CHANGED=0
           mkdir -p "${POST_DIR}"
 
-          echo "开始遍历文件夹 ${POST_DIR}"
-          for filepath in "${POST_DIR}"/*; do
-            [[ ! -f "${filepath}" ]] && continue
+          echo "====开始扫描===="
+          # 改用find命令，规避for glob通配符失效bug
+          find "${POST_DIR}" -maxdepth 1 -type f | while read -r filepath; do
             filename=$(basename "${filepath}")
-            echo "扫描文件：${filename}"
+            echo "扫描文件: ${filename}"
 
             [[ "${filename}" == *.md ]] && continue
             echo "${filename}" | grep -E '^[0-9]{4}-[0-9]{2}-[0-9]{2}-' >/dev/null && continue
@@ -60,16 +60,17 @@ jobs:
             rm -f "${filepath}"
             mv "${TMP_RAW}" "${OUT_MD}"
             CHANGED=1
-            echo "✅完成转换：${filename} → ${OUT_MD}"
+            echo "✅转换完成 → ${OUT_MD}"
           done
 
           echo "CHANGED=${CHANGED}"
-          echo "CHANGED=${CHANGED}" >> $GITHUB_ENV
+          if [[ ${CHANGED} -eq 0 ]];then
+            echo "无需要转换文件，结束"
+            exit 0
+          fi
 
-      - name: 提交修改
-        if: env.CHANGED == '1'
-        uses: ad-m/github-push-action@master
-        with:
-          branch: main
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          message: "[SKIP_AUTO_TITLE] auto:遍历文件夹转换文章"
+          git config --global user.name "KBot-Auto"
+          git config --global user.email "bot@example.com"
+          git add "${POST_DIR}/"
+          git commit -m "[SKIP_AUTO_TITLE] auto:转换无后缀文章"
+          git push origin main
