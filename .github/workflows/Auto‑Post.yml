@@ -36,8 +36,8 @@ jobs:
           mkdir -p "${POST_DIR}"
           CHANGED_FILES=()
 
-          # -z 空字符分隔，解决文件名空格、换行bug
-          git diff --name-only -z --diff-filter=A HEAD^ HEAD | while IFS= read -r -d '' filepath; do
+          # -z null分隔 + 进程替换 < <( ，杜绝子shell丢失变量
+          while IFS= read -r -d '' filepath; do
             [[ -z "${filepath}" ]] && continue
             if [[ ! "${filepath}" =~ ^${POST_DIR}/ ]];then
               continue
@@ -65,7 +65,8 @@ jobs:
             mv "${TMP_RAW}" "${OUT_MD}"
             CHANGED_FILES+=("${OUT_MD}")
             echo "✅转换完成：${filename} → ${OUT_MD}"
-          done
+
+          done < <(git diff --name-only -z --diff-filter=A HEAD^ HEAD)
 
           echo "本次转换文章数：${#CHANGED_FILES[@]}"
           if [[ ${#CHANGED_FILES[@]} -eq 0 ]];then
