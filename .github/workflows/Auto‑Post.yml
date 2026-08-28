@@ -10,7 +10,7 @@ jobs:
   convert_raw_post:
     runs-on: ubuntu-latest
     steps:
-      - name: 拉取代码
+      - name: 拉取完整历史
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
@@ -31,18 +31,20 @@ jobs:
             echo "skip=false" >> $GITHUB_OUTPUT
           fi
 
-      - name: 仅处理本次提交新增文件
+      - name: 转换无后缀文章
         if: steps.skip_check.outputs.skip == 'false'
         run: |
           POST_DIR="_posts"
           TODAY=$(date +%Y-%m-%d)
           mkdir -p "${POST_DIR}"
           CHANGED_FILES=()
+          CURRENT_SHA="${{ github.sha }}"
 
-          # 改用github event拿到本次push新增文件，规避HEAD^不存在的问题
-          ADDED_FILES=$(jq -r '.commits[].added[]?' <<< '${{ toJson(github.event) }}')
-          echo "本次提交新增文件列表："
+          # 核心：diff-tree 获取本次commit新增文件(A)，不再依赖HEAD^
+          ADDED_FILES=$(git diff-tree --no-commit-id --name-only --diff-filter=A -r "${CURRENT_SHA}")
+          echo "====本次提交新增文件===="
           echo "${ADDED_FILES}"
+          echo "========================"
 
           while IFS= read -r filepath; do
             [[ -z "${filepath}" ]] && continue
@@ -51,7 +53,7 @@ jobs:
             fi
 
             filename=$(basename "${filepath}")
-            echo "检测新增文件：${filename}"
+            echo "检测文件：${filename}"
 
             [[ "${filename}" == *.md ]] && continue
             echo "${filename}" | grep -E '^[0-9]{4}-[0-9]{2}-[0-9]{2}-' >/dev/null && continue
@@ -73,13 +75,13 @@ jobs:
             rm -f "${filepath}"
             mv "${TMP_RAW}" "${OUT_MD}"
             CHANGED_FILES+=("${OUT_MD}")
-            echo "✅转换完成：${filename} → ${OUT_MD}"
+            echo "✅完成：${filename} → ${OUT_MD}"
 
           done <<< "${ADDED_FILES}"
 
-          echo "本次转换文章数：${#CHANGED_FILES[@]}"
+          echo "本次转换数量：${#CHANGED_FILES[@]}"
           if [[ ${#CHANGED_FILES[@]} -eq 0 ]];then
-            echo "没有需要转换的新增文章，退出"
+            echo "没有待转换文章，正常退出"
             exit 0
           fi
 
