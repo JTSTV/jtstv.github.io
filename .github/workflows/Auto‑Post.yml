@@ -3,20 +3,17 @@ on:
   push:
     branches: [ main ]
 
-permissions:
-  contents: write
-
 jobs:
   convert_raw_post:
     runs-on: ubuntu-latest
     steps:
-      - name: 拉取完整历史
+      - name: 拉取代码
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: 设置北京时间
+      - name: 设置时区
         run: |
           sudo ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
           echo "Asia/Shanghai" | sudo tee /etc/timezone
@@ -31,37 +28,24 @@ jobs:
             echo "skip=false" >> $GITHUB_OUTPUT
           fi
 
-      - name: 转换无后缀文章
+      - name: 遍历转换，规避子shell
         if: steps.skip_check.outputs.skip == 'false'
         run: |
           POST_DIR="_posts"
           TODAY=$(date +%Y-%m-%d)
           mkdir -p "${POST_DIR}"
           CHANGED_FILES=()
-          CURRENT_SHA="${{ github.sha }}"
 
-          # 核心：diff-tree 获取本次commit新增文件(A)，不再依赖HEAD^
-          ADDED_FILES=$(git diff-tree --no-commit-id --name-only --diff-filter=A -r "${CURRENT_SHA}")
-          echo "====本次提交新增文件===="
-          echo "${ADDED_FILES}"
-          echo "========================"
-
-          while IFS= read -r filepath; do
-            [[ -z "${filepath}" ]] && continue
-            if [[ ! "${filepath}" =~ ^${POST_DIR}/ ]];then
-              continue
-            fi
-
+          echo "====开始扫描===="
+          while IFS= read -r -d '' filepath; do
             filename=$(basename "${filepath}")
-            echo "检测文件：${filename}"
+            echo "扫描文件: ${filename}"
 
             [[ "${filename}" == *.md ]] && continue
             echo "${filename}" | grep -E '^[0-9]{4}-[0-9]{2}-[0-9]{2}-' >/dev/null && continue
 
             TMP_RAW=$(mktemp /tmp/post.XXXXXX)
-            ESC_TITLE=$(printf "%s" "${filename}" \
-            | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g' -e 's/#/\#/g' -e 's/\[/\\[/g' -e 's/\]/\\]/g' -e 's/{/\\{/g' -e 's/}/\\}/g')
-
+            ESC_TITLE=$(printf "%s" "${filename}" | sed 's/"/\\"/g')
             OUT_MD="${POST_DIR}/${TODAY}-${filename}.md"
 
             {
@@ -75,18 +59,18 @@ jobs:
             rm -f "${filepath}"
             mv "${TMP_RAW}" "${OUT_MD}"
             CHANGED_FILES+=("${OUT_MD}")
-            echo "✅完成：${filename} → ${OUT_MD}"
+            echo "✅转换完成 → ${OUT_MD}"
 
-          done <<< "${ADDED_FILES}"
+          done < <(find "${POST_DIR}" -maxdepth 1 -type f -print0)
 
-          echo "本次转换数量：${#CHANGED_FILES[@]}"
+          echo "共转换数量：${#CHANGED_FILES[@]}"
           if [[ ${#CHANGED_FILES[@]} -eq 0 ]];then
-            echo "没有待转换文章，正常退出"
+            echo "无需要转换文件，退出"
             exit 0
           fi
 
           git config --global user.name "KBot-Auto"
           git config --global user.email "bot@example.com"
           git add "${POST_DIR}/"
-          git commit -m "[SKIP_AUTO_TITLE] auto:文件名生成标题"
+          git commit -m "[SKIP_AUTO_TITLE] auto:转换无后缀文章"
           git push origin main
