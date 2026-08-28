@@ -36,10 +36,8 @@ jobs:
           mkdir -p "${POST_DIR}"
           CHANGED_FILES=()
 
-          # --diff-filter=AM  A新增 M修改；-z null分隔；进程替换避免子shell丢数组
           while IFS= read -r -d '' filepath; do
             [[ -z "${filepath}" ]] && continue
-            # 只处理 _posts 下，并且不带 .md 后缀的文件
             if [[ ! "${filepath}" =~ ^${POST_DIR}/ ]] || [[ "${filepath}" == *.md ]];then
               continue
             fi
