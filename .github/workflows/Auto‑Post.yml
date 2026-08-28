@@ -27,6 +27,8 @@ jobs:
 
       - name: 遍历转换 _posts 下无后缀文件
         run: |
+          export LANG=C.UTF-8
+          export LC_ALL=C.UTF-8
           POST_DIR="_posts"
           TODAY=$(date +%Y-%m-%d)
           mkdir -p "${POST_DIR}"
@@ -75,6 +77,8 @@ jobs:
             exit 0
           fi
 
+          git config --global core.quotepath false
+          git config --global i18n.fileEncoding utf-8
           git config --global user.name "KBot-Auto"
           git config --global user.email "bot@example.com"
           git add "${POST_DIR}/"
