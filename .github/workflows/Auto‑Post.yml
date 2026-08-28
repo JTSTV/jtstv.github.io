@@ -10,11 +10,10 @@ jobs:
   convert_raw_post:
     runs-on: ubuntu-latest
     steps:
-      - name: 拉取代码
+      - name: 拉取完整代码历史
         uses: actions/checkout@v4
         with:
-          fetch-depth: 1
-          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 2
 
       - name: 设置北京时间
         run: |
@@ -24,7 +23,7 @@ jobs:
       - name: 判断是否跳过本次转换
         id: skip_check
         run: |
-          MSG="${{ github.event.head_commit.message }}"
+          MSG="$(git log -1 --pretty=%B)"
           if [[ "${MSG}" == *"[SKIP_AUTO_TITLE]"* ]];then
             echo "skip=true" >> $GITHUB_OUTPUT
           else
@@ -39,8 +38,9 @@ jobs:
           mkdir -p "${POST_DIR}"
           CHANGED=()
 
-          CHANGED_FILES=$(jq -r '.commits[].added[]?, .commits[].modified[]?' <<< '${{ toJson(github.event) }}' | sort -u | uniq)
-          
+          # 通过git diff拿到新增+修改文件，抛弃jq解析github.event
+          CHANGED_FILES=$(git diff --name-only HEAD^ HEAD)
+
           while IFS= read -r f; do
             [[ -z "$f" ]] && continue
             [[ ! "$f" =~ ^${POST_DIR}/ ]] && continue
@@ -67,7 +67,7 @@ EOF
 
           echo "本次待生成文章数量：${#CHANGED[@]}"
           if [[ ${#CHANGED[@]} -eq 0 ]];then
-            echo ">>> 本次没有需要转换的稿件，任务完成，success"
+            echo ">>> 本次没有需要转换的稿件，任务完成"
             exit 0
           fi
 
