@@ -12,19 +12,16 @@ layout: null
 {% if page.keywords %}<meta name="keywords" content="{{ page.keywords }}">{% endif %}
 <link rel="canonical" href="{{ site.url }}{{ page.url }}">
 <style>
-/* 仅保留移动端防贴边，修复文字/链接溢出截断，其余全部浏览器原生，不自定义字号边距 */
-* {
-  box-sizing: border-box;
+body {
+  font-size: calc(1rem + 2px);
+}
+/* 修复长链接、长英文横向溢出，只加换行规则，不修改任何边距字号 */
+.post-content {
+  overflow-wrap: break-word;
+  word-break: break-all;
 }
 @media(max-width:600px){
-.container{
-  padding:0 24px;
-}
-/* 防止长链接、长英文单词横向溢出遮挡页面 */
-.post-content, .post-content a {
-  word‑break: break‑all;
-  overflow‑wrap: break‑word;
-}
+.container{padding:0;}
 }
 </style>
 </head>
