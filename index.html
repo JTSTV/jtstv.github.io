@@ -12,7 +12,9 @@ layout: null
 <link rel="canonical" href="{{ site.url }}{{ page.url }}">
 <meta name="robots" content="index, follow, max-snippet:160">
 <style>
+/* 仅保留移动端视口防贴边，其余全部浏览器原生样式，无自定义边距字号 */
 @media(max-width:600px){
+.container{padding:0 18px;}
 }
 </style>
 </head>
