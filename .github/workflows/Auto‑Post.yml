@@ -28,17 +28,16 @@ jobs:
             echo "skip=false" >> $GITHUB_OUTPUT
           fi
 
-      - name: 遍历_posts转换
+      - name: 遍历转换，规避子shell
         if: steps.skip_check.outputs.skip == 'false'
         run: |
           POST_DIR="_posts"
           TODAY=$(date +%Y-%m-%d)
-          CHANGED=0
           mkdir -p "${POST_DIR}"
+          CHANGED_FILES=()
 
           echo "====开始扫描===="
-          # 改用find命令，规避for glob通配符失效bug
-          find "${POST_DIR}" -maxdepth 1 -type f | while read -r filepath; do
+          while IFS= read -r -d '' filepath; do
             filename=$(basename "${filepath}")
             echo "扫描文件: ${filename}"
 
@@ -59,13 +58,14 @@ jobs:
 
             rm -f "${filepath}"
             mv "${TMP_RAW}" "${OUT_MD}"
-            CHANGED=1
+            CHANGED_FILES+=("${OUT_MD}")
             echo "✅转换完成 → ${OUT_MD}"
-          done
 
-          echo "CHANGED=${CHANGED}"
-          if [[ ${CHANGED} -eq 0 ]];then
-            echo "无需要转换文件，结束"
+          done < <(find "${POST_DIR}" -maxdepth 1 -type f -print0)
+
+          echo "共转换数量：${#CHANGED_FILES[@]}"
+          if [[ ${#CHANGED_FILES[@]} -eq 0 ]];then
+            echo "无需要转换文件，退出"
             exit 0
           fi
 
