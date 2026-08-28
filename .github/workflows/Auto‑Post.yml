@@ -39,7 +39,6 @@ jobs:
           mkdir -p "${POST_DIR}"
           CHANGED=()
 
-          # 安全获取变更文件，防止jq空输入崩溃
           CHANGED_FILES=$(jq -r '.commits[].added[]?, .commits[].modified[]?' <<< '${{ toJson(github.event) }}' | sort -u | uniq)
           
           while IFS= read -r f; do
