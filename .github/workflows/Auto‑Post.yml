@@ -86,4 +86,4 @@ jobs:
           git config --global user.email "bot@example.com"
           git add "${POST_DIR}/"
           git commit -m "[SKIP_AUTO_TITLE] auto:文件名生成标题"
-          git push origin main
+          git push origin main 
