@@ -47,9 +47,9 @@ jobs:
             echo "${filename}" | grep -E '^[0-9]{4}-[0-9]{2}-[0-9]{2}-' >/dev/null && continue
 
             TMP_RAW=$(mktemp /tmp/post.XXXXXX)
-            # YAML页面标题：完整原始文件名，转义双引号、替换危险符号
+            # YAML标题：完整原始文件名，转义双引号，过滤危险符号
             ESC_TITLE=$(printf "%s" "${filename}" | sed -e 's/"/\\"/g' -e 's/[?*|<>\\]/，/g')
-            # 磁盘文件名：截取前70字符，防止255字节超限
+            # 磁盘文件名截断70字符，规避Linux 255字节文件名上限
             DISK_FILENAME=$(printf "%s" "${filename}" | sed -e 's/[?*|<>\\]/，/g' | cut -c 1-70)
             OUT_MD="${POST_DIR}/${TODAY}-${DISK_FILENAME}.md"
 
@@ -58,6 +58,9 @@ jobs:
               echo "title: \"${ESC_TITLE}\""
               echo "date: ${TODAY}"
               echo '---'
+              # 将完整原始标题插入正文最开头
+              echo "# ${filename}"
+              echo ""
               cat "${filepath}"
             } > "${TMP_RAW}"
 
