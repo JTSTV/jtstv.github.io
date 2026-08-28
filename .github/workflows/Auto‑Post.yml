@@ -10,7 +10,7 @@ jobs:
       - name: 拉取代码
         uses: actions/checkout@v4
         with:
-          fetch-depth: 2
+          fetch-depth: 1
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: 设置北京时间
@@ -36,8 +36,10 @@ jobs:
           mkdir -p "${POST_DIR}"
           CHANGED_FILES=()
 
-          while IFS= read -r -d '' filepath; do
+          # 读取github push事件返回本次变更文件，不再依赖git diff父提交
+          while IFS= read -r filepath; do
             [[ -z "${filepath}" ]] && continue
+            # 只处理 _posts目录，排除已经是.md后缀
             if [[ ! "${filepath}" =~ ^${POST_DIR}/ ]] || [[ "${filepath}" == *.md ]];then
               continue
             fi
@@ -62,7 +64,7 @@ jobs:
             CHANGED_FILES+=("${OUT_MD}")
             echo "✅处理完成：${filename} → ${OUT_MD}"
 
-          done < <(git diff --name-only -z --diff-filter=AM HEAD^ HEAD)
+          done < <(jq -r '.commits[].added[]?, .commits[].modified[]?' <<< '${{ toJson(github.event) }}' | sort -u)
 
           echo "本次处理文章数量：${#CHANGED_FILES[@]}"
           if [[ ${#CHANGED_FILES[@]} -eq 0 ]];then
