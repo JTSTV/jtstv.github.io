@@ -18,7 +18,7 @@ jobs:
           sudo ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
           echo "Asia/Shanghai" | sudo tee /etc/timezone
 
-      - name: 判断跳过标记
+      - name: 判断是否跳过本次转换
         id: skip_check
         run: |
           MSG="${{ github.event.head_commit.message }}"
@@ -28,52 +28,46 @@ jobs:
             echo "skip=false" >> $GITHUB_OUTPUT
           fi
 
-      - name: 处理新增/修改文章｜免日期免md后缀，支持空格中文标点
+      - name: 转换无后缀文章
         if: steps.skip_check.outputs.skip == 'false'
         run: |
           POST_DIR="_posts"
           TODAY=$(date +%Y-%m-%d)
           mkdir -p "${POST_DIR}"
-          CHANGED_FILES=()
+          CHANGED=()
 
-          # 读取github push事件返回本次变更文件，不再依赖git diff父提交
-          while IFS= read -r filepath; do
-            [[ -z "${filepath}" ]] && continue
-            # 只处理 _posts目录，排除已经是.md后缀
-            if [[ ! "${filepath}" =~ ^${POST_DIR}/ ]] || [[ "${filepath}" == *.md ]];then
-              continue
-            fi
+          while IFS= read -r f; do
+            [[ -z "$f" ]] && continue
+            [[ ! "$f" =~ ^${POST_DIR}/ ]] && continue
+            [[ "$f" == *.md ]] && continue
+            [[ ! -f "$f" ]] && continue
 
-            filename=$(basename "${filepath}")
-            echo "检测文件：${filename}"
+            fn=$(basename "$f")
+            echo "处理文件：$fn"
+            tmp=$(mktemp)
+            title_esc=$(printf "%s" "$fn" | sed 's/"/\\"/g')
+            out="${POST_DIR}/${TODAY}-${fn}.md"
 
-            TMP_RAW=$(mktemp /tmp/post.XXXXXX)
-            ESC_TITLE=$(printf "%s" "${filename}" | sed 's/"/\\"/g')
-            OUT_MD="${POST_DIR}/${TODAY}-${filename}.md"
-
-            {
-              echo '---'
-              echo "title: \"${ESC_TITLE}\""
-              echo "date: ${TODAY}"
-              echo '---'
-              cat "${filepath}"
-            } > "${TMP_RAW}"
-
-            rm -f "${filepath}"
-            mv "${TMP_RAW}" "${OUT_MD}"
-            CHANGED_FILES+=("${OUT_MD}")
-            echo "✅处理完成：${filename} → ${OUT_MD}"
-
+            cat > "$tmp" <<EOF
+---
+title: "${title_esc}"
+date: ${TODAY}
+---
+$(cat "$f")
+EOF
+            rm -f "$f"
+            mv "$tmp" "$out"
+            CHANGED+=("$out")
           done < <(jq -r '.commits[].added[]?, .commits[].modified[]?' <<< '${{ toJson(github.event) }}' | sort -u)
 
-          echo "本次处理文章数量：${#CHANGED_FILES[@]}"
-          if [[ ${#CHANGED_FILES[@]} -eq 0 ]];then
-            echo "无需要处理的文件，正常结束"
+          echo "处理数量：${#CHANGED[@]}"
+          if [[ ${#CHANGED[@]} -eq 0 ]];then
+            echo "无待处理文件，退出"
             exit 0
           fi
 
           git config --global user.name "KBot"
           git config --global user.email "bot@noreply.github.com"
-          git add "${CHANGED_FILES[@]}"
-          git commit -m "[SKIP_AUTO_TITLE] auto:转换文章，免md免日期"
+          git add "${CHANGED[@]}"
+          git commit -m "[SKIP_AUTO_TITLE] auto convert post"
           git push origin main
